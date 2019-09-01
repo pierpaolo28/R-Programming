@@ -59,8 +59,6 @@ ggplot(df, aes(x=Pclass, fill=Survived)) +
        title = "Survival Rate based on Passenger Class")
 
 
-library(dplyr)
-
 # Subplots using filtered dataset
 p1 <-  ggplot(subset(df, df$Pclass == 1), aes(x=Sex, fill=Survived)) +
   theme_bw() +
