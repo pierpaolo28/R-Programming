@@ -1,0 +1,144 @@
+---
+title: "R Notebook Titanic"
+output: html_notebook
+---
+
+# Getting Started with R Programming
+
+## Data Visualization
+
+```{r}
+#install.packages("pacman")
+#install.packages('Rtools')
+library(pacman)
+pacman::p_load(pacman,dplyr, ggplot2, rio, gridExtra, scales, ggcorrplot, caret, e1071)
+
+getwd()
+setwd('C:\\Users\\hp\\Desktop\\AI\\R Programming\\Titanic')
+```
+
+Importing the training set of the Titanic Dataset
+
+```{r}
+# CSV
+df <- import("./titanic-train.csv")
+head(df)
+```
+
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+```{r}
+# List all columns names in the dataset
+names(df)
+
+# Inspect the number of observables, features and data types in the dataset
+str(df)
+```
+
+Creating a simple Bar Plot
+
+```{r}
+df$Survived <- as.factor(df$Survived)
+df$Pclass <- as.factor(df$Pclass)
+df$Sex <- as.factor(df$Sex)
+df$Embarked <- as.factor(df$Embarked)
+
+ggplot(df, aes(x=Survived, fill = Survived)) + 
+  theme_bw() +
+  geom_bar() +
+  labs(y= "Number of Passengers",
+       title= "Survival Rate")
+```
+
+Calculating classes percentages
+
+```{r}
+prop.table(table(df$Survived)) # cell percentages
+```
+
+Survival rates by genders
+
+```{r}
+ggplot(df, aes(x=Sex, fill= Survived)) + 
+  theme_bw() +
+  geom_bar() +
+  labs(y= "Number of Passengers",
+       title= "Survival Rate by Gender")
+```
+```{r}
+prop.table(table(df$Survived, df$Sex),1) # row percentages
+prop.table(table(df$Survived, df$Sex),2) # column percentages
+```
+
+Survival Rate based on Passenger Class
+
+```{r}
+ggplot(df, aes(x=Pclass, fill=Survived)) +
+  theme_bw() +
+  geom_bar() +
+  labs(y = "Number of Passengers",
+       title = "Survival Rate based on Passenger Class")
+```
+
+Subplots in R
+
+```{r}
+# Subplots using filtered dataset
+p1 <-  ggplot(subset(df, df$Pclass == 1), aes(x=Sex, fill=Survived)) +
+  theme_bw() +
+  ylim(0, 350) +
+  labs(title = "Passenger Class 1") +
+  geom_bar()
+p2 <- ggplot(subset(df, df$Pclass == 2), aes(x=Sex, fill=Survived)) +
+  theme_bw() +
+  ylim(0, 350) +
+  labs(title = "Passenger Class 2") +
+  geom_bar()
+p3 <- ggplot(subset(df, df$Pclass == 3), aes(x=Sex, fill=Survived)) +
+  theme_bw() +
+  ylim(0, 350) +
+  labs(title = "Passenger Class 3") +
+  geom_bar()
+grid.arrange(p1, p2, p3, nrow = 1)
+```
+
+Adding class percentages on Bar Charts
+
+```{r}
+# Percentages bar charts
+ggplot(df, aes(x= Survived,  group=Pclass)) + 
+  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+  geom_text(aes( label = scales::percent(..prop..),
+                 y= ..prop.. ), stat= "count", vjust = -.5) +
+  labs(y = "Percent", fill="Survived") +
+  facet_grid(~Pclass) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(labels = c('Dead','Survived'))
+```
+
+Histogram Distribution (Number of Passengers vs Age)
+
+```{r}
+# Count plots with percentages
+df %>% 
+  group_by(Pclass) %>% 
+  summarize(count = n()) %>% 
+  mutate(percent = count/sum(count)) %>% 
+  ggplot(aes(x=Pclass, y=count)) +
+  geom_col() +
+  geom_text(aes(label = paste0(round(100 * percent, 1), "%")), vjust = -0.25)
+
+ggplot(df, aes(x=Age, fill=Survived)) +
+  theme_bw() +
+  geom_histogram(binwidth = 10) +
+  labs(y="Number of Passengers",
+       x = "Age")
+```
+```{r}
+ggplot(df, aes(x = Age, fill = Survived)) +
+  theme_bw() +
+  facet_wrap(Sex~Pclass) +
+  geom_histogram(binwidth = 10) +
+  labs(y = "Survived", x = "Age")
+```

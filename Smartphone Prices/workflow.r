@@ -1,7 +1,7 @@
 .rs.restartR() # Restart Kernel Session
 
+install.packages("pacman")
 library(pacman)
-
 pacman::p_load(pacman,dplyr, ggplot2, rio, gridExtra, scales, ggcorrplot, caret, e1071)
 
 getwd()
@@ -39,7 +39,7 @@ missing_values %>%
   coord_flip()+theme_bw()
 
 corr <- round(cor(df), 8)
-head(corr[, 1:6])
+#head(corr[, 1:6])
 
 #p.mat <- cor_pmat(df)
 #head(p.mat[, 1:4])
@@ -51,7 +51,7 @@ df$dual_sim <- as.factor(df$dual_sim)
 df$four_g <- as.factor(df$four_g)
 df$price_range <- as.factor(df$price_range)
 
-# Subplots using filtered dataset
+# Bar Chart Subplots
 p1 <-  ggplot(df, aes(x=blue, fill=blue)) +
   theme_bw() +
   geom_bar() +
