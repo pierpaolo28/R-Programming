@@ -23,7 +23,7 @@ library(ggvis)
 
 
 ```{r}
-data <- read.csv("~/Desktop/data/VehicleFailure.csv")
+data <- read.csv("VehicleFailure.csv")
 ```
 
 ```{r}
