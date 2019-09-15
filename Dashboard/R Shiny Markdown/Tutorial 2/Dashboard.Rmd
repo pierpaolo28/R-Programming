@@ -1,0 +1,270 @@
+---
+title: "BK's Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    social: [ "twitter", "facebook", "menu"]
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(openintro)
+library(highcharter)
+library(ggvis)
+```
+
+
+```{r}
+data <- read.csv("~/Desktop/data/VehicleFailure.csv")
+```
+
+```{r}
+mycolors <- c("blue", "#FFC125", "darkgreen", "darkorange")
+```
+
+Interactive Data Visualization
+=====================================
+
+Row
+-------------------------------------
+
+### Car Failure Analysis
+
+```{r}
+valueBox(paste("Failure"),
+         color = "warning")
+```
+
+### Car Failures in US
+
+```{r}
+valueBox(length(data$State),
+         icon = "fa-user")
+```
+
+### **Labor Cost**
+
+```{r}
+gauge(round(mean(data$lc),
+            digits = 2),
+            min = 0,
+            max = 350,
+            gaugeSectors(success = c(0, 150),
+                         warning = c(150, 240),
+                         danger = c(240, 350),
+                         colors = c("green", "yellow", "red")))
+```
+
+### Massachusetts
+
+```{r}
+valueBox(sum(data$State == "MA"),
+         icon = 'fa-building')
+```
+
+### California
+
+```{r}
+valueBox(sum(data$State == "CA"),
+         icon = 'fa-building')
+```
+
+### Texas
+
+```{r}
+valueBox(sum(data$State == "TX"),
+         icon = 'fa-building')
+```
+
+### Florida
+
+```{r}
+valueBox(sum(data$State == "FL"),
+         icon = 'fa-building')
+```
+
+Row
+-------------------------------
+
+### Failures By State
+
+```{r}
+p1 <- data %>%
+         group_by(State) %>%
+         summarise(count = n()) %>%
+         plot_ly(x = ~State,
+                 y = ~count,
+                 color = "blue",
+                 type = 'bar') %>%
+layout(xaxis = list(title = "Failures By State"),
+yaxis = list(title = 'Count'))
+p1
+```
+
+### Top States
+
+```{r}
+p2 <- data %>%
+         group_by(State) %>%
+         summarise(count = n()) %>%
+         filter(count>50) %>%
+         plot_ly(labels = ~State,
+                 values = ~count,
+                 marker = list(colors = mycolors)) %>%
+         add_pie(hole = 0.2) %>%
+         layout(xaxis = list(zeroline = F,
+                             showline = F,
+                             showticklabels = F,
+                             showgrid = F),
+                yaxis = list(zeroline = F,
+                             showline = F,
+                             showticklabels=F,
+                             showgrid=F))
+p2
+```
+
+### FM Vs Mileage
+
+```{r}
+p3 <- plot_ly(data,
+              x = ~fm,
+              y = ~Mileage,
+              text = paste("FM:", data$fm,
+                           "Mileage:",
+                           data$Mileage),
+              type = "bar") %>%
+         layout(xaxis = list(title="FM"),
+                yaxis = list(title = "Failure Mileage"))
+p3
+```
+
+Row
+------------------------------------
+### Scatter Plot of Month Vs Mileage
+
+```{r}
+p4 <- plot_ly(data, x=~fm) %>%
+         add_markers(y = ~Mileage,
+                     text = ~paste("Mileage: ", Mileage),
+                     showlegend = F) %>%
+         add_lines(y = ~fitted(loess(Mileage ~ fm)),
+                   name = "Loess Smoother",
+                   color = I("#FFC125"),
+                   showlegend = T,
+                   line = list(width=5)) %>%
+         layout(xaxis = list(title = "Month"),
+                yaxis = list(title = "Mileage"))
+p4
+```
+
+### Box Plot of Top State
+
+```{r}
+data %>%
+         group_by(State) %>%
+         ggvis(~State, ~lc, fill = ~State) %>%
+         layer_boxplots()
+```
+
+Map
+========================================
+
+### Map
+
+```{r}
+car <- data %>%
+         group_by(State) %>%
+         summarize(total = n())
+car$State <- abbr2state(car$State)
+
+highchart() %>%
+         hc_title(text = "Car Failures in US") %>%
+         hc_subtitle(text = "Source: Vehiclefailure.csv") %>%
+         hc_add_series_map(usgeojson, car,
+                           name = "State",
+                           value = "total",
+                           joinBy = c("woename", "State")) %>%
+         hc_mapNavigation(enabled = T)
+```
+
+Data Table
+========================================
+
+```{r}
+datatable(data,
+          caption = "Failure Data",
+          rownames = T,
+          filter = "top",
+          options = list(pageLength = 25))
+```
+
+Pivot Table
+=========================================
+
+```{r}
+rpivotTable(data,
+            aggregatorName = "Count",
+            cols= "fm",
+            rows = "State",
+            rendererName = "Heatmap")
+```
+
+Summary {data-orientation=columns} 
+===========================================
+
+Column 
+-----------------------------------
+
+### Max Failure Month
+
+```{r}
+valueBox(max(data$fm),
+         icon = "fa-user" )
+```
+
+### Average Labor cost
+```{r}
+valueBox(round(mean(data$lc),
+               digits = 2),
+         icon = "fa-area-chart")
+```
+
+### Average Mileage at Failure
+
+```{r}
+valueBox(round(mean(data$Mileage), digits = 2),
+         icon = "fa-area-chart")
+```
+
+Column
+---------------------------
+
+Report
+
+* This is a report on `r length(data$fm)` car failures.
+
+* The average labor cost was `r mean(data$lc)`.
+
+* The average material cost was `r mean(data$mc)`.
+
+This report was generated on `r format(Sys.Date(), format = "%B %d, %Y")`.
+
+About Report
+========================================
+
+Created by: Data Scientist at ABC
+
+Confidential: HIGHLY!
+
+
+
+
+
