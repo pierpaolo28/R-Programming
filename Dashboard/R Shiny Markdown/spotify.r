@@ -105,9 +105,7 @@ df %>%
   group_by(artists) %>%
   summarise(freq = n()) %>%
   arrange(desc(freq)) %>%
-  slice(1) %>%
-  d <- artists
-  df$artists[3]
+  slice(1)
 
 df %>%
   group_by(artists) %>%
