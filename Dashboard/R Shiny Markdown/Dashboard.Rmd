@@ -1,0 +1,254 @@
+---
+title: "Spotify 2018"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    social: [ "twitter", "facebook", "menu"]
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(openintro)
+library(highcharter)
+library(ggvis)
+
+library(pacman)
+pacman::p_load(pacman,dplyr, ggplot2, plotly,tidyr, rio, gridExtra, scales, ggcorrplot, caret)
+```
+
+
+```{r}
+df <- import("./top2018.csv")
+df$hit <- with(df, paste(artists,",", name))
+df$key <- as.factor(df$key)
+df$mode <- as.factor(df$mode)
+df$time_signature <- as.factor(df$time_signature)
+```
+
+```{r}
+mycolors <- c("blue", "#FFC125", "darkgreen", "darkorange")
+```
+
+Key Indicators
+=====================================
+
+Row
+-------------------------------------
+
+### Best Spotify Artist 2018
+
+```{r}
+valueBox(df$artists[3],
+         icon = "fa-user")
+```
+
+### **Number of Hits in Top 100**
+
+```{r}
+gauge(round(6,
+            digits = 2),
+            min = 0,
+            max = 100,
+            gaugeSectors(success = c(5, 100),
+                         warning = c(2, 5),
+                         danger = c(0, 2),
+                         colors = c("green", "yellow", "red")))
+```
+
+
+Row
+-------------------------------
+
+### Sound Keys Counts (Pitch Class notation)
+
+```{r}
+c <- sum(df$key==0)
+c2 <- sum(df$key==1)
+d <- sum(df$key==2)
+d2 <- sum(df$key==3)
+e <- sum(df$key==4)
+f <- sum(df$key==5)
+f2 <- sum(df$key==6)
+g <- sum(df$key==7)
+g2 <- sum(df$key==8)
+a <- sum(df$key==9)
+a2 <- sum(df$key==10)
+b <- sum(df$key==11)
+
+scale = c(c,c2,d,d2,e,f,f2,g,g2,a,a2,b)
+
+plot_ly(
+  x = c('C','C#','D','D#','E','F','F#','G','G#','A','A#','B'),
+  y = scale,
+  type = "bar"
+)
+```
+
+### Trak Modality
+
+```{r}
+m1 <- sum(df$mode==0)
+m2 <- sum(df$mode==1)
+
+plot_ly(
+  x = c('Minor','Major'),
+  y = c(m1,m2),
+  type = "bar"
+)
+```
+
+### Time Signature (how many beats are in each bar)
+
+```{r}
+t1 <- sum(df$time_signature==3)
+t2 <- sum(df$time_signature==4)
+t3 <- sum(df$time_signature==5)
+
+plot_ly(
+  x = c('3','4','5'),
+  y = c(t1,t2,t3),
+  type = "bar"
+)
+```
+
+Overall Analysis
+========================================
+
+### Artists with most hits in Top 100
+
+```{r}
+df %>%
+  group_by(artists) %>%
+  summarise(freq = n()) %>%
+  arrange(desc(freq)) %>%
+  slice(1:10) %>%
+  ggplot(., aes(reorder(artists, +freq), freq))+
+  geom_bar(stat = "identity", fill = "royalblue1", col = "grey10")+
+  coord_flip()+
+  labs(x = "" ,y = "Top 10 2018 Artists")+
+  geom_text(aes(label = freq, y = freq/2))
+```
+
+### Features Correlation
+
+```{r}
+df$key <- as.numeric(df$key)
+df$mode <- as.numeric(df$mode)
+df$time_signature <- as.numeric(df$time_signature)
+corr <- round(cor(df[,4:16]), 8)
+ggcorrplot(corr)
+```
+
+Music Analysis
+========================================
+
+### Danceability
+
+```{r}
+df %>%
+  arrange(desc(danceability)) %>%
+  slice(1:5) %>%
+  ggplot(., aes(reorder(hit, +danceability), danceability))+
+  geom_bar(stat = "identity", fill = "royalblue1", col = "grey10")+
+  coord_flip()+
+  labs(x = "" ,y = "Score")+
+  geom_text(aes(label = danceability, y = danceability/2))
+```
+
+### Energy
+
+```{r}
+df %>%
+  arrange(desc(energy)) %>%
+  slice(1:5) %>%
+  ggplot(., aes(reorder(hit, + energy), energy))+
+  geom_bar(stat = "identity", fill = "royalblue1", col = "grey10")+
+  coord_flip()+
+  labs(x = "" ,y = "Score")+
+  geom_text(aes(label = energy, y = energy/2))
+```
+
+### Loudness
+
+```{r}
+df %>%
+  arrange(desc(loudness)) %>%
+  slice(1:5) %>%
+  ggplot(., aes(reorder(hit, + loudness), loudness))+
+  geom_bar(stat = "identity", fill = "royalblue1", col = "grey10")+
+  coord_flip()+
+  labs(x = "" ,y = "Score")+
+  geom_text(aes(label = loudness, y = loudness/2))
+```
+
+Time Analysis
+========================================
+
+### Duration (mins:secs)
+
+```{r}
+df %>%
+  arrange(desc(duration_ms)) %>%
+  slice(1:5) %>%
+  ggplot(., aes(reorder(hit, + duration_ms), duration_ms))+
+  geom_bar(stat = "identity", fill = "royalblue1", col = "grey10")+
+  coord_flip()+
+  labs(x = "" ,y = "Score")+
+  geom_text(aes(label = format(as.POSIXct(Sys.Date())+duration_ms/1000, "%M:%S"), y = duration_ms/2))
+```
+
+### Musical Tempo Bands 
+
+```{r}
+q <- sum(df$tempo > 168)
+w <- sum(df$tempo >= 110 & df$tempo <= 168)
+e <- sum(df$tempo >= 76 & df$tempo <= 108)
+r <- sum(df$tempo >= 66 & df$tempo <= 76)
+t <- sum(df$tempo < 65)
+
+plot_ly(
+  x = c('Presto', 'Allegro', 'Andante','Adagio', 'Lenght'),
+  y = c(q,w,e,r,t),
+  type = "bar"
+)
+```
+
+Dataset Table
+========================================
+
+```{r}
+datatable(df[,2:16],
+          caption = "Spotify Top 100 2018",
+          rownames = T,
+          filter = "top",
+          options = list(pageLength = 25))
+```
+
+Pivot Table
+=========================================
+
+```{r}
+rpivotTable(df,
+            aggregatorName = "Count",
+            cols= "fm",
+            rows = "State",
+            rendererName = "Heatmap")
+```
+
+Summary 
+===========================================
+
+This report provides a summary of the [Top Spotify Tracks of 2018 Kaggle Dataset](https://www.kaggle.com/nadintamer/top-spotify-tracks-of-2018). <br>
+
+This dashboard was realised using R Shiny Markdown. <br>
+
+* Click [here](https://pierpaolo28.github.io/work.html) to come back my Personal Website.
+
+* Click [here](https://pierpaolo28.github.io/blog/) to visit my Personal Blog.
+
+* Click [here](https://github.com/pierpaolo28/R-Programming) to access this Dashboard Code Repository.
